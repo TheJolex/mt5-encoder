@@ -4,12 +4,12 @@ import torch
 from torch import nn
 from torch.utils import checkpoint
 
-from transformers.models.t5.modeling_t5 import (
-    T5PreTrainedModel,
-    T5Config,
-    T5Stack,
-    T5_START_DOCSTRING,
-    T5_ENCODER_INPUTS_DOCSTRING,
+from transformers.models.mt5.modeling_mt5 import (
+    MT5PreTrainedModel,
+    MT5Config,
+    MT5Stack,
+    MT5_START_DOCSTRING,
+    MT5_ENCODER_INPUTS_DOCSTRING,
     PARALLELIZE_DOCSTRING,
     DEPARALLELIZE_DOCSTRING,
     _CONFIG_FOR_DOC
@@ -28,15 +28,15 @@ from transformers.utils.logging import get_logger
 logger = get_logger("transformers")
 
 @add_start_docstrings(
-    """T5 Model with a token classification head on top (a linear layer on top of the hidden-states output) e.g. for
+    """MT5 Model with a token classification head on top (a linear layer on top of the hidden-states output) e.g. for
     Named-Entity-Recognition (NER) tasks.
     """, 
-    T5_START_DOCSTRING
+    MT5_START_DOCSTRING
 )
-class T5ForTokenClassification(T5PreTrainedModel):
+class MT5ForTokenClassification(MT5PreTrainedModel):
     _keys_to_ignore_on_load_missing = [r"encoder.embed_tokens.weight"]
 
-    def __init__(self, config: T5Config):
+    def __init__(self, config: MT5Config):
         super().__init__(config)
         self.model_dim = config.d_model
 
@@ -46,7 +46,7 @@ class T5ForTokenClassification(T5PreTrainedModel):
         encoder_config.is_decoder = False
         encoder_config.is_encoder_decoder = False
         encoder_config.use_cache = False
-        self.encoder = T5Stack(encoder_config, self.shared)
+        self.encoder = MT5Stack(encoder_config, self.shared)
 
         classifier_dropout = (
             config.classifier_dropout if hasattr(config, 'classifier_dropout') else config.dropout_rate
@@ -100,7 +100,7 @@ class T5ForTokenClassification(T5PreTrainedModel):
         for layer, heads in heads_to_prune.items():
             self.encoder.block[layer].layer[0].SelfAttention.prune_heads(heads)
 
-    @add_start_docstrings_to_model_forward(T5_ENCODER_INPUTS_DOCSTRING)
+    @add_start_docstrings_to_model_forward(MT5_ENCODER_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=TokenClassifierOutput, config_class=_CONFIG_FOR_DOC)
     def forward(
         self,
@@ -154,14 +154,14 @@ class T5ForTokenClassification(T5PreTrainedModel):
         )
 
 @add_start_docstrings(
-    """T5 Model with a sequence classification head on top (a linear layer on top of the <eos> token).
+    """MT5 Model with a sequence classification head on top (a linear layer on top of the <eos> token).
     """, 
-    T5_START_DOCSTRING
+    MT5_START_DOCSTRING
 )
-class T5ForSequenceClassification(T5PreTrainedModel):
+class MT5ForSequenceClassification(MT5PreTrainedModel):
     _keys_to_ignore_on_load_missing = [r"encoder.embed_tokens.weight"]
 
-    def __init__(self, config: T5Config):
+    def __init__(self, config: MT5Config):
         super().__init__(config)
         self.model_dim = config.d_model
         self.config.problem_type = None
@@ -173,7 +173,7 @@ class T5ForSequenceClassification(T5PreTrainedModel):
         encoder_config.is_decoder = False
         encoder_config.is_encoder_decoder = False
         encoder_config.use_cache = False
-        self.encoder = T5Stack(encoder_config, self.shared)
+        self.encoder = MT5Stack(encoder_config, self.shared)
 
         classifier_dropout = (
             config.classifier_dropout if hasattr(config, 'classifier_dropout') else config.dropout_rate
@@ -227,7 +227,7 @@ class T5ForSequenceClassification(T5PreTrainedModel):
         for layer, heads in heads_to_prune.items():
             self.encoder.block[layer].layer[0].SelfAttention.prune_heads(heads)
 
-    @add_start_docstrings_to_model_forward(T5_ENCODER_INPUTS_DOCSTRING)
+    @add_start_docstrings_to_model_forward(MT5_ENCODER_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=TokenClassifierOutput, config_class=_CONFIG_FOR_DOC)
     def forward(
         self,
