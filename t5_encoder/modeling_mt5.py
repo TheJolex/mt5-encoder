@@ -27,6 +27,26 @@ from transformers.utils.model_parallel_utils import assert_device_map, get_devic
 from transformers.utils.logging import get_logger
 logger = get_logger("transformers")
 
+class MT5ClassificationHead(nn.Module):
+    """Head for sentence-level classification tasks."""
+
+    def __init__(self, config):
+        super().__init__()
+        self.dense = nn.Linear(config.d_model, config.d_model)
+        classifier_dropout = (
+            config.classifier_dropout if hasattr(config, 'classifier_dropout') else config.dropout_rate
+        )
+        self.dropout = nn.Dropout(classifier_dropout)
+        self.out_proj = nn.Linear(config.d_model, config.num_labels)
+
+    def forward(self, features, **kwargs):
+        x = self.dropout(features)
+        x = self.dense(x)
+        x = torch.tanh(x)
+        x = self.dropout(x)
+        x = self.out_proj(x)
+        return x
+
 @add_start_docstrings(
     """MT5 Model with a token classification head on top (a linear layer on top of the hidden-states output) e.g. for
     Named-Entity-Recognition (NER) tasks.
@@ -175,11 +195,7 @@ class MT5ForSequenceClassification(MT5PreTrainedModel):
         encoder_config.use_cache = False
         self.encoder = MT5Stack(encoder_config, self.shared)
 
-        classifier_dropout = (
-            config.classifier_dropout if hasattr(config, 'classifier_dropout') else config.dropout_rate
-        )
-        self.dropout = nn.Dropout(classifier_dropout)
-        self.classifier = nn.Linear(config.d_model, config.num_labels)
+        self.classifier = MT5ClassificationHead(config)
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -272,7 +288,6 @@ class MT5ForSequenceClassification(MT5PreTrainedModel):
         last_hidden_indices = sums.unsqueeze(dim=-1).repeat(1, outputs[0].size(-1)).unsqueeze(1)
         sequence_output = outputs[0].gather(dim=1, index=last_hidden_indices).squeeze(1)
 
-        sequence_output = self.dropout(sequence_output)
         logits = self.classifier(sequence_output)
 
         loss = None
